@@ -4,5 +4,5 @@ A collection of scripts to help users of computers / laptops with hybrid graphic
 
 # Scripts
 
-- nvvk
-- mux-icon
+- nvvk: A script to change Vulkan driver based on active card
+- mux-icon: A script that shows the active card
