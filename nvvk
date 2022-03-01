@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Set NVVK version
+# Version string
 VERSION="0.3"
 
 # Get program name
