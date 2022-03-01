@@ -64,6 +64,7 @@ function usage() {
     echo "Options:"
     echo -e "\t--nvidia\tIgnore card detection and force a NVIDIA card"
     echo -e "\t--amd\t\tIgnore card detection and force AMD card"
+    echo -e "\t--radv\t\tForce radv over amdvlk"
     echo -e "\t-h, --help\tDisplay this message and exit"
     echo -e "\t-v, --version\tDisplay version and exit"
     echo
@@ -122,14 +123,14 @@ function amd_icd() {
     icd_paths=""
 
     for file in ${icd_files}; do
-        if [ "$(basename "${file}")" == "amd_icd32.json" ] || [ "$(basename "${file}")" == "radeon_icd.i686.json" ]; then
+        if [ -z "${force_radv}" ] && [ "$(basename "${file}")" == "amd_icd32.json" ] || [ "$(basename "${file}")" == "radeon_icd.i686.json" ]; then
             icd_paths="${file}"
             break
         fi
     done
 
     for file in ${icd_files}; do
-        if [ "$(basename "${file}")" == "amd_icd64.json" ] || [ "$(basename "${file}")" == "radeon_icd.x86_64.json" ]; then
+        if [ -z "${force_radv}" ] && [ "$(basename "${file}")" == "amd_icd64.json" ] || [ "$(basename "${file}")" == "radeon_icd.x86_64.json" ]; then
             icd_paths="${icd_paths}:${file}"
             break
         fi
@@ -174,14 +175,31 @@ if [ -z "${1}" ]; then
     error "Expecting a program name or aregument, try --help"
 fi
 
-case "${1}" in
-    "--nvidia") force_nvidia="1"; shift;;
-    "--amd") force_amd="1"; shift;;
-    "-v") version; exit 0;;
-    "--version") version; exit 0;;
-    "-h") usage; exit 0;;
-    "--help") usage; exit 0;
-esac
+if [ "${1}" == "--nvidia" ]; then
+    info "Forcing NVIDIA graphics cards"
+    force_nvidia="1"
+    shift
+elif [ "${1}" == "--amd" ]; then
+    info "Forcing AMD graphics card"
+    force_amd="1"
+    shift
+fi
+
+if [ "${1}" == "--radv" ]; then
+    info "Forcing radv over amdvlk"
+    force_radv="1"
+    shift
+fi
+
+if [ "${1}" == "--version" ] || [ "${1}" == "-v" ]; then
+    version
+    exit 0
+fi
+
+if [ "${1}" == "--help" ] || [ "${1}" == "-h" ]; then
+    usage
+    exit 0
+fi
 
 # Get GPU and ICD
 if is_amd && [ -z "${force_nvidia}" ] || [ ! -z "${force_amd}" ]; then
