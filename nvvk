@@ -30,19 +30,27 @@
 #
 
 
-PROGNAME="${0}"
-PROGNAME="$(basename "${PROGNAME}")"
+# Get program name
+PROGRAM_NAME="${0}"
+PROGRAM_NAME="$(basename "$(echo "${PROGRAM_NAME}")")"
+
+# List of ICD paths
+_VK_ICD_PATH="/usr/local/etc/vulkan/icd.d
+/usr/local/share/vulkan/icd.d
+/etc/vulkan/icd.d
+/usr/share/vulkan/icd.d
+$HOME/.local/share/vulkan/icd.d"
 
 
-# Show information
+# Show information messages
 function info() {
-    echo "${PROGNAME}: $1" >&1
+    echo "${PROGRAM_NAME}: $1" >&1
 }
 
 
-# Show an error
+# Return a text error
 function error() {
-    echo "${PROGNAME}: $1" >&2
+    echo "${PROGRAM_NAME}: ${1}"
     exit 1
 }
 
@@ -53,6 +61,51 @@ function gpu_vendor() {
     echo "${vendor}"
 }
 
+
+# Get all ICD files
+function icd_files() {
+    for dir in ${_VK_ICD_PATH}; do
+        if [ -d "${dir}" ]; then
+            for file in "${dir}"/*.json; do
+                [ -f "${file}" ] && echo "${file}"
+            done
+        fi
+    done
+}
+
+
+# Get AMD ICD paths
+function amd_icd() {
+    icd_files="$(icd_files)"
+    icd_paths=""
+
+    for file in ${icd_files}; do
+        if [ "$(basename "${file}")" == "amd_icd32.json" ] || [ "$(basename "${file}")" == "radeon_icd.i686.json" ]; then
+            icd_paths="${file}"
+            break
+        fi
+    done
+
+    for file in ${icd_files}; do
+        if [ "$(basename "${file}")" == "amd_icd64.json" ] || [ "$(basename "${file}")" == "radeon_icd.x86_64.json" ]; then
+            icd_paths="${icd_paths}:${file}"
+            break
+        fi
+    done
+
+    echo "${icd_paths}"
+}
+
+
+# Get NVIDIA ICD paths
+function nvidia_icd() {
+    for file in $(icd_files); do
+        if [ "$(basename "${file}")" == "nvidia_icd.json" ]; then
+            echo "${file}"
+            break
+        fi
+    done
+}
 
 # Check if user has glxinfo
 if ! command -v glxinfo &> /dev/null; then
