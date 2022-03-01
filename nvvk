@@ -29,6 +29,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+# Set NVVK version
+VERSION="0.3"
 
 # Get program name
 PROGRAM_NAME="${0}"
@@ -52,6 +54,40 @@ function info() {
 function error() {
     echo "${PROGRAM_NAME}: ${1}"
     exit 1
+}
+
+
+# Show a usage message
+function usage() {
+    echo "Usage: ${0} [option] program [arguments...]"
+    echo
+    echo "Options:"
+    echo -e "\t--nvidia\tIgnore card detection and force a NVIDIA card"
+    echo -e "\t--amd\t\tIgnore card detection and force AMD card"
+    echo -e "\t-h, --help\tDisplay this message and exit"
+    echo -e "\t-v, --version\tDisplay version and exit"
+    echo
+    echo "Environment Variables:"
+    echo -e "\tVK_ICD_FILENAMES"
+    echo -e "\t\tPath for additional Vulkan ICD files, priority is \$VK_ICD_FILENAMES over standard paths"
+    echo
+}
+
+
+# Show a version message
+function version() {
+    bash_version="$(bash --version | head -n 1)"
+    glx_version="$(glxinfo -B | grep "OpenGL version string" | cut -d ":" -f 2 | sed 's/ //')"
+
+    echo "nvvk ${VERSION}"
+    echo "Copyright (c) 2022, Artur 'h0m3' Paiva <dr.hoome@gmail.com>"
+    echo "Licensed under BSD Three Clause License <https://opensource.org/licenses/BSD-3-Clause>"
+    echo
+    echo "${bash_version}"
+    echo "glxinfo, OpenGL ${glx_version}"
+    echo
+    echo "This is free software; you are free to change and redistribute it."
+    echo "There is NO WARRANTY, to the extent permitted by law."
 }
 
 
@@ -133,18 +169,31 @@ if ! command -v glxinfo &> /dev/null; then
     error "Unable to find glxinfo, please install it"
 fi
 
-# Get GPU and ICD
-if is_amd; then
+# Parse user arguments
+if [ -z "${1}" ]; then
+    error "Expecting a program name or aregument, try --help"
+fi
 
-    info "AMD card detected"
+case "${1}" in
+    "--nvidia") force_nvidia="1"; shift;;
+    "--amd") force_amd="1"; shift;;
+    "-v") version; exit 0;;
+    "--version") version; exit 0;;
+    "-h") usage; exit 0;;
+    "--help") usage; exit 0;
+esac
+
+# Get GPU and ICD
+if is_amd && [ -z "${force_nvidia}" ] || [ ! -z "${force_amd}" ]; then
+    info "AMD card"
     icd="$(amd_icd)"
     if [ -z "${icd}" ]; then
-        error "Unable to find AMD ICD files. Make sure amdvlk or radeon-vulkan is installed"
+        error "Unable to find AMD ICD files. Make sure amdvlk or vulkan-radeon is installed"
     fi
 
-elif is_nvidia; then
+elif is_nvidia || [ ! -z "${force_nvidia}" ]; then
 
-    info "NVIDIA card detected"
+    info "NVIDIA card"
     icd="$(nvidia_icd)"
     if [ -z "${icd}" ]; then
         error "Unable to find NVIDIA ICD files. Make sure nvidia proprietary drivers are installed"

@@ -76,7 +76,7 @@ function about() {
         --license="${license}" \
         --pversion="Version ${VERSION}" \
         --copyright="Copyright (c) 2022, Artur 'h0m3' Paiva <dr.hoome@gmail.com>" \
-        --comments="Impossible without ${bash_version} - gnu.org/software/bash | YAD ${yad_version} - github.com/v1cont/yad | glxinfo - OpenGL ${glx_version} - dri.freedesktop.org/wiki/glxinfo" \
+        --comments="Impossible without ${bash_version} - gnu.org/software/bash | YAD ${yad_version} - github.com/v1cont/yad | glxinfo, OpenGL ${glx_version} - dri.freedesktop.org/wiki/glxinfo" \
         --website="https://github.com/h0m3/mux-utils" \
         --window-icon="display"
 }
@@ -107,7 +107,7 @@ function version() {
     echo
     echo "${bash_version}"
     echo "YAD ${yad_version}"
-    echo "glxinfo - OpenGL ${glx_version}"
+    echo "glxinfo, OpenGL ${glx_version}"
     echo
     echo "This is free software; you are free to change and redistribute it."
     echo "There is NO WARRANTY, to the extent permitted by law."
