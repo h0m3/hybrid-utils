@@ -1,8 +1,40 @@
 #!/usr/bin/env bash
+# A Shell Script to show the current active GPU icon
+# Copyright (c) 2022, Artur 'h0m3' Paiva <dr.hoome@gmail.com>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# * Neither the name of [project] nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-PROGNAME="${0}"
-PROGNAME="$(basename "${PROGNAME}")"
+# Version string
+VERSION="0.2"
+
+# Get program name
+PROGRAM_NAME="${0}"
+PROGRAM_NAME="$(basename "$(echo "${PROGRAM_NAME}")")"
 
 # Internationalization fix
 # Bug: https://github.com/h0m3/autorandr-ui/issues/4
@@ -10,33 +42,68 @@ TEXTDOMAIN=yad
 TEXTDOMAINDIR=/usr/share/locale
 
 
+# Show information messages
 function info() {
-    echo "${PROGNAME}: $1" >&1
+    echo "${PROGRAM_NAME}: $1" >&1
 }
 
 
-function warning() {
-    echo "${PROGNAME}: $1" >&2
+# Return a text error
+function error() {
+    echo "${PROGRAM_NAME}: ${1}"
+    exit 1
 }
 
+
+# Display a GUI error
+function graphical_error() {
+    yad \
+        --window-icon=dialog-error \
+        --image=dialog-error \
+        --title "${PROGRAM_NAME} - ${1}" \
+        --text "${2}" \
+        --button="yad-close:1" \
+        --escape-ok \
+        --on-top \
+        --skip-taskbar \
+        --fixed
+    exit 1
+}
+
+
+# Show the notification icon
 function notification() {
     yad \
         --notification \
         --text="${1} Graphics detected" \
         --no-middle \
-        --image="${1}" \
-        --command="close_icon"
+        --image="${1}"
 }
 
-vendor="$(glxinfo | grep "OpenGL vendor string" | cut -d ":" -f 2)"
 
-if echo "${vendor}" | grep "AMD" 2>&1 > /dev/null; then
+# Get the GPU vendor
+function gpu_vendor() {
+    vendor="$(glxinfo | grep "OpenGL vendor string" | cut -d ":" -f 2 | sed 's/ //g')"
+    echo "${vendor}"
+}
+
+
+# Check if the user has zenity
+if ! command -v yad &> /dev/null; then
+    error "YAD is currently not installed"
+fi
+
+# Check if user has glxinfo
+if ! command -v glxinfo &> /dev/null; then
+    graphical_error "glxinfo not installed" "glxinfo is currently not installed\n\nFor more information check out 'https://dri.freedesktop.org/wiki/glxinfo'"
+fi
+
+if gpu_vendor | grep "AMD" 2>&1 > /dev/null; then
     info "AMD graphics card detected"
     notification "amd"
-elif echo "${vendor}" | grep "NVIDIA" 2>&1 > /dev/null; then
+elif gpu_vendor | grep "NVIDIA" 2>&1 > /dev/null; then
     info "NVIDIA graphics card detected"
     notification "nvidia"
 else
-    warning "No GPU detected"
-    notification "yad-question"
+    error "No graphics card detected"
 fi
