@@ -19,26 +19,14 @@ function warning() {
     echo "${PROGNAME}: $1" >&2
 }
 
-
 function notification() {
     yad \
         --notification \
         --text="${1} Graphics detected" \
         --no-middle \
-        --image="${1}"
+        --image="${1}" \
+        --command="close_icon"
 }
-
-function close_icon() {
-    yad \
-        --title="Close icon?"\
-        --text="Do you want to close the icon from the screen"\
-        --image="dialog-question"\
-        --window-icon="dialog-question"\
-        --button="yad-yes:0"\
-        --button="yad-no:1"
-}
-
-close_icon
 
 vendor="$(glxinfo | grep "OpenGL vendor string" | cut -d ":" -f 2)"
 
