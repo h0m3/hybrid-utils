@@ -30,7 +30,7 @@
 #
 
 # Version string
-VERSION="0.3"
+VERSION="0.4"
 
 # Get program name
 PROGRAM_NAME="${0}"
@@ -224,4 +224,4 @@ fi
 # Run command with correct ICD
 info "Using '${icd}'"
 export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1 VK_ICD_FILENAMES="${icd}"
-${@}
+"${@}"
