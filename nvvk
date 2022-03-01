@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+#
+
+PROGNAME="${0}"
+PROGNAME="$(basename "${PROGNAME}")"
+
+
+function info() {
+    echo "${PROGNAME}: $1" >&1
+}
+
+
+function error() {
+    echo "${PROGNAME}: $1" >&2
+    exit 1
+}
+
+
+function set_nvidia() {
+    info "NVIDIA card detected"
+
+    if [ ! -z "${NV_VK_ICD_FILENAMES}" ]; then
+        info "Using '${NV_VK_ICD_FILENAMES}'"
+        export VK_ICD_FILENAMES="${NV_VK_ICD_FILENAMES}"
+        return
+    fi
+
+    if [ -f "/usr/share/vulkan/icd.d/nvidia_icd.json" ]; then
+        info "Using nvidia proprietary vulkan"
+        info "Using '/usr/share/vulkan/icd.d/nvidia_icd.json'"
+        export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia_icd.json"
+        return
+    fi
+
+    error "Unable to find nvidia ICD file. Please set \$NV_VK_ICD_FILENAMES"
+}
+
+
+function set_amd() {
+    info "AMD card detected"
+
+    if [ ! -z "${AMD_VK_ICD_FILENAMES}" ]; then
+        export VK_ICD_FILENAMES="${AMD_VK_ICD_FILENAMES}"
+        return
+    fi
+
+    if [ -f "/usr/share/vulkan/icd.d/radeon_icd.i686.json" ] && [ -f "/usr/share/vulkan/icd.d/radeon_icd.x86_64.json" ]; then
+        info "Using amdvlk"
+        info "Using '/usr/share/vulkan/icd.d/radeon_icd.i686.json:/usr/share/vulkan/icd.d/radeon_icd.x86_64.json'"
+        export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/radeon_icd.i686.json:/usr/share/vulkan/icd.d/radeon_icd.x86_64.json"
+        return
+    fi
+
+    if [ -f "/usr/share/vulkan/icd.d/amd_icd32.json" ] && [ -f "/usr/share/vulkan/icd.d/amd_icd64.json" ]; then
+        info "Using RADV / Mesa Vulkan"
+        info "Using '/usr/share/vulkan/icd.d/amd_icd32.json:/usr/share/vulkan/icd.d/amd_icd64.json'"
+        export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/amd_icd32.json:/usr/share/vulkan/icd.d/amd_icd64.json"
+        return
+    fi
+
+    error "Unable to find amd ICD files. Please set \$AMD_VK_ICD_FILENAMES"
+}
+
+
+# Disable AMD automatic ICD loader
+export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1
+
+# Detect GPU
+vendor="$(glxinfo | grep "OpenGL vendor string" | cut -d ":" -f 2)"
+
+if echo "${vendor}" | grep "AMD" 2>&1 > /dev/null; then
+    set_amd
+    ${@}
+elif echo "${vendor}" | grep "NVIDIA" 2>&1 > /dev/null; then
+    set_nvidia
+    ${@}
+else
+    error "No GPU detected"
+fi
