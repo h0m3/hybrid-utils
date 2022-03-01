@@ -1,0 +1,12 @@
+[Desktop Entry]
+Comment=Icon to show the active GPU
+Exec=mux-icon
+GenericName=Icon to show the active GPU
+Icon=device_pci
+Name=Mux Icon
+NoDisplay=false
+Path=/usr/local/bin
+StartupNotify=false
+Terminal=false
+TerminalOptions=
+Type=Application
