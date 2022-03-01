@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+
+PROGNAME="${0}"
+PROGNAME="$(basename "${PROGNAME}")"
+
+function info() {
+    echo "${PROGNAME}: $1" >&1
+}
+
+function notification() {
+    yad \
+        --notification \
+        --no-middle \
+        --image="${1}"\
+        --text="AMD Graphics detected"
+}
+
+vendor="$(glxinfo | grep "OpenGL vendor string" | cut -d ":" -f 2)"
+
+if echo "${vendor}" | grep "AMD" 2>&1 > /dev/null; then
+    info "AMD graphics card detected"
+    notification "amd"
+elif echo "${vendor}" | grep "NVIDIA" 2>&1 > /dev/null; then
+    info "NVIDIA graphics card detected"
+    notification "nvidia"
+else
+    info "No GPU detected"
+    notification "yad-question"
+fi
