@@ -4,6 +4,11 @@
 PROGNAME="${0}"
 PROGNAME="$(basename "${PROGNAME}")"
 
+# Internationalization fix
+# Bug: https://github.com/h0m3/autorandr-ui/issues/4
+TEXTDOMAIN=yad
+TEXTDOMAINDIR=/usr/share/locale
+
 
 function info() {
     echo "${PROGNAME}: $1" >&1
@@ -18,11 +23,22 @@ function warning() {
 function notification() {
     yad \
         --notification \
+        --text="${1} Graphics detected" \
         --no-middle \
-        --image="${1}"\
-        --text="AMD Graphics detected"
+        --image="${1}"
 }
 
+function close_icon() {
+    yad \
+        --title="Close icon?"\
+        --text="Do you want to close the icon from the screen"\
+        --image="dialog-question"\
+        --window-icon="dialog-question"\
+        --button="yad-yes:0"\
+        --button="yad-no:1"
+}
+
+close_icon
 
 vendor="$(glxinfo | grep "OpenGL vendor string" | cut -d ":" -f 2)"
 
