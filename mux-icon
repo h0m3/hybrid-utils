@@ -162,7 +162,7 @@ function is_nvidia() {
 
 
 # Check if GPU running is Intel
-function is_nvidia() {
+function is_intel() {
     gpu_vendor | grep "Intel" 2>&1 > /dev/null
     return $?
 }
