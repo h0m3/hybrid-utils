@@ -30,7 +30,7 @@
 #
 
 # Version string
-VERSION="0.3"
+VERSION="0.5"
 
 # Get program name
 PROGRAM_NAME="${0}"
@@ -64,6 +64,7 @@ function usage() {
     echo "Options:"
     echo -e "\t--nvidia\tIgnore card detection and force a NVIDIA card"
     echo -e "\t--amd\t\tIgnore card detection and force AMD card"
+    echo -e "\t--intel\tIgnore card detection and force a Intel card"
     echo -e "\t--radv\t\tForce radv over amdvlk"
     echo -e "\t-h, --help\tDisplay this message and exit"
     echo -e "\t-v, --version\tDisplay version and exit"
@@ -140,6 +141,30 @@ function amd_icd() {
 }
 
 
+# Get Intel ICD paths
+function intel_icd() {
+    icd_files="$(icd_files)"
+    icd_paths=""
+
+    for file in ${icd_files}; do
+        if [ "$(basename "${file}")" == "intel_icd.i686.json" ]; then
+            icd_paths="${file}"
+            break
+        fi
+    done
+
+    for file in ${icd_files}; do
+        if [ "$(basename "${file}")" == "intel_icd.x86_64.json" ]; then
+            icd_paths="${icd_paths}:${file}"
+            break
+        fi
+    done
+
+    echo "${icd_paths}"
+}
+
+
+
 # Get NVIDIA ICD paths
 function nvidia_icd() {
     for file in $(icd_files); do
@@ -158,10 +183,16 @@ function is_amd() {
 }
 
 
-# Check if GPU running is NVIDI
+# Check if GPU running is NVIDIA
 function is_nvidia() {
     gpu_vendor | grep "NVIDIA" 2>&1 > /dev/null
     return $?
+}
+
+
+# Check if GPU running is Intel
+function is_intel() {
+    gpu_vendor | grep "Intel" 2>&1 > /dev/null
 }
 
 
@@ -183,6 +214,10 @@ elif [ "${1}" == "--amd" ]; then
     info "Forcing AMD graphics card"
     force_amd="1"
     shift
+elif [ "${1}" == "--intel" ]; then
+    info "Forcing Intel graphics card"
+    force_intel="1"
+    shift
 fi
 
 if [ "${1}" == "--radv" ]; then
@@ -202,19 +237,26 @@ if [ "${1}" == "--help" ] || [ "${1}" == "-h" ]; then
 fi
 
 # Get GPU and ICD
-if is_amd && [ -z "${force_nvidia}" ] || [ ! -z "${force_amd}" ]; then
+if is_amd && [ -z "${force_nvidia}" ] && [ -z "${force_intel}" ] || [ ! -z "${force_amd}" ]; then
     info "AMD card"
     icd="$(amd_icd)"
     if [ -z "${icd}" ]; then
         error "Unable to find AMD ICD files. Make sure amdvlk or vulkan-radeon is installed"
     fi
 
-elif is_nvidia || [ ! -z "${force_nvidia}" ]; then
+elif is_nvidia && [ -z "${force_intel}" ] || [ ! -z "${force_nvidia}" ]; then
 
     info "NVIDIA card"
     icd="$(nvidia_icd)"
     if [ -z "${icd}" ]; then
         error "Unable to find NVIDIA ICD files. Make sure nvidia proprietary drivers are installed"
+    fi
+
+elif is_intel || [ ! -z "${force_intel}" ]; then
+    info "Intel card"
+    icd="$(intel_icd)"
+    if [ -z "${icd}" ]; then
+        error "Unable to find Intel ICD files. Make sure intel drivers (vulkan-intel) are installed"
     fi
 
 else
@@ -224,4 +266,4 @@ fi
 # Run command with correct ICD
 info "Using '${icd}'"
 export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1 VK_ICD_FILENAMES="${icd}"
-${@}
+"${@}"

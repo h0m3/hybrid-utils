@@ -30,7 +30,7 @@
 #
 
 # Version string
-VERSION="0.2"
+VERSION="0.3"
 
 # Get program name
 PROGRAM_NAME="${0}"
@@ -154,9 +154,16 @@ function is_amd() {
 }
 
 
-# Check if GPU running is NVIDI
+# Check if GPU running is NVIDIA
 function is_nvidia() {
     gpu_vendor | grep "NVIDIA" 2>&1 > /dev/null
+    return $?
+}
+
+
+# Check if GPU running is Intel
+function is_intel() {
+    gpu_vendor | grep "Intel" 2>&1 > /dev/null
     return $?
 }
 
@@ -179,6 +186,9 @@ if [ -z "${1}" ]; then
     elif is_nvidia; then
         info "NVIDIA graphics card detected"
         notification "nvidia"
+    elif is_intel; then
+        info "Intel graphics card detected"
+        notification "intel"
     else
         error "No graphics card detected"
     fi
